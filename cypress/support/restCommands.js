@@ -17,7 +17,7 @@ Cypress.Commands.add('getToken', (user, passwd) => {
     // Fazendo login na aplicação e validando se o token não está vazio
         cy.request({
             method: 'POST',
-            url: 'https://barrigarest.wcaquino.me/signin',
+            url: '/signin',
             body: {
                 email: user,
                 redirecionar: false,
@@ -30,6 +30,30 @@ Cypress.Commands.add('getToken', (user, passwd) => {
 })
 
 Cypress.Commands.add('resetRest', () => {
-    
+    // Resetando o banco de dados via API
+    cy.getToken('27@teste.com', '2727')
+        .then(token => {
+        cy.request({
+            method: 'GET',
+            url: '/reset',
+            headers: { Authorization: `JWT ${token}`},
+        }).its('status').should('be.equal', 200)        
+    })
+})
 
+Cypress.Commands.add('getAccountByName', name => {
+    // Obter conta por nome
+    cy.getToken('27@teste.com', '2727')
+        .then(token => {
+        cy.request({
+            method: 'GET',
+            url: '/contas',
+            headers: { Authorization: `JWT ${token}`},
+            qs: {
+                nome: name
+            }
+        }).then(response => {
+            return response.body[0].id
+        })    
+    })
 })
