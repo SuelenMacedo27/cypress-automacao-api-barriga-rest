@@ -16,7 +16,7 @@ describe('Barriga Rest API Tests', () => {
          cy.resetRest()
     })
 
-    it('Should create an account', () => { //Deve criar uma conta
+    it('Should create an account', () => { //Deve criar/inserir uma conta
         cy.request({
             url: '/contas',
             method: 'POST',
@@ -33,7 +33,7 @@ describe('Barriga Rest API Tests', () => {
         })
     })
 
-    it('Should update an account', () => { //Deve atualizar uma conta existente
+    it('Should update an account', () => { //Deve atualizar/alterar uma conta existente 
         cy.request({
             method: 'GET',
             url: '/contas',
@@ -54,7 +54,7 @@ describe('Barriga Rest API Tests', () => {
         cy.get('@response').its('status').should('be.equal', 200)
     })
 
-    it('Should not create an account with same name', () => { //Não deve criar uma conta com o mesmo nome
+    it('Should not create an account with same name', () => { //Não deve criar uma conta com o mesmo nome (inserindo conta repetida)
         cy.request({
             url: '/contas',
             method: 'POST',
@@ -71,7 +71,7 @@ describe('Barriga Rest API Tests', () => {
         })
     })
 
-    it.only('Should create a transaction', () => { //Deve criar uma movimentação, transação
+    it.only('Should create a transaction', () => { //Deve criar/inserir uma movimentação, transação
         cy.getAccountByName('Conta para movimentacoes')
             .then(accountID => {
                 const dataAtual = new Date().toLocaleDateString('pt-BR')
