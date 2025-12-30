@@ -5,13 +5,13 @@ import '../support/restCommands'
 describe('Barriga Rest API Tests', () => {
 
     // Variável para armazenar o token de autenticação
-    let token 
+    //let token 
     // Executa antes de cada teste - Login e obtenção do token
-    before(() => {
+    beforeEach(() => {
         cy.getToken('27@teste.com', '2727')
-        .then(tkn => {
-            token = tkn
-        }) 
+    //    .then(tkn => {
+    //        token = tkn
+    //    }) 
         
          cy.resetRest()
     })
@@ -20,7 +20,7 @@ describe('Barriga Rest API Tests', () => {
         cy.request({
             url: '/contas',
             method: 'POST',
-            headers: { Authorization: `JWT ${token}`},
+    //        headers: { Authorization: `JWT ${token}`},
             body: {
                 nome: 'Conta via rest 02'
             }
@@ -34,23 +34,17 @@ describe('Barriga Rest API Tests', () => {
     })
 
     it('Should update an account', () => { //Deve atualizar/alterar uma conta existente 
-        cy.request({
-            method: 'GET',
-            url: '/contas',
-            headers: { Authorization: `JWT ${token}`},
-            qs: {
-                nome: 'Conta para alterar'
-            }
-        }).then(response => {
-            cy.request({
-                url: `/contas/${response.body[0].id}`,
-                method: 'PUT',
-                headers: { Authorization: `JWT ${token}`},
-                body: {
-                    nome: 'Conta alterada via rest'
-                }
-            }).as('response')
-        })
+        cy.getAccountByName('Conta para alterar')
+            .then(accountID => {
+                cy.request({
+                    url: `/contas/${accountID}`,
+                    method: 'PUT',
+    //                headers: { Authorization: `JWT ${token}`},
+                    body: {
+                        nome: 'Conta alterada via rest'
+                    }
+                }).as('response')
+            })
         cy.get('@response').its('status').should('be.equal', 200)
     })
 
@@ -58,7 +52,7 @@ describe('Barriga Rest API Tests', () => {
         cy.request({
             url: '/contas',
             method: 'POST',
-            headers: { Authorization: `JWT ${token}`},
+    //        headers: { Authorization: `JWT ${token}`},
             body: {
                 nome: 'Conta mesmo nome'
             },
@@ -71,14 +65,14 @@ describe('Barriga Rest API Tests', () => {
         })
     })
 
-    it.only('Should create a transaction', () => { //Deve criar/inserir uma movimentação, transação
+    it('Should create a transaction', () => { //Deve criar/inserir uma movimentação, transação
         cy.getAccountByName('Conta para movimentacoes')
             .then(accountID => {
                 const dataAtual = new Date().toLocaleDateString('pt-BR')
                 cy.request({
                     method: 'POST',
                     url: '/transacoes',
-                    headers: { Authorization: `JWT ${token}`},
+    //                headers: { Authorization: `JWT ${token}`},
                     body:{
                         conta_id: accountID,
                         data_pagamento: dataAtual,
@@ -92,15 +86,71 @@ describe('Barriga Rest API Tests', () => {
                 }).as('response')
             })
 
-            cy.get('@response').its('status').should('be.equal', 201)
-            cy.get('@response').its('body.id').should('exist', )
-
+        cy.get('@response').its('status').should('be.equal', 201)
+        cy.get('@response').its('body.id').should('exist')
     })
-
+    
     it('Should get balance', () => { //Deve validar o saldo
-    })
+        cy.request({
+            url: '/saldo',
+            method: 'GET',
+    //        headers: { Authorization: `JWT ${token}`},
+        }).then(response => {
+            let balanceAccount = null 
+            response.body.forEach(account => { 
+                if(account.conta === 'Conta para saldo') balanceAccount = account.saldo
+            })
+            expect(balanceAccount).to.be.equal('534.00') 
+        })
 
+        cy.request({ 
+            method: 'GET',
+            url: '/transacoes',
+    //        headers: { Authorization: `JWT ${token}`},
+            qs: { descricao: 'Movimentacao 1, calculo saldo' }
+        }).then(response => {
+            const dataAtual = new Date().toLocaleDateString('pt-BR')
+            cy.request({
+                url: `/transacoes/${response.body[0].id}`, 
+                method: 'PUT',
+    //            headers: { Authorization: `JWT ${token}`},
+                body: {
+                    status: true,
+                    data_transacao: dataAtual,
+                    data_pagamento: dataAtual,
+                    descricao: response.body[0].descricao,
+                    envolvido: response.body[0].envolvido,
+                    valor: response.body[0].valor, 
+                    conta_id: response.body[0].conta_id
+                }
+            }).its('status').should('be.equal', 200)
+        })
+
+        cy.request({
+            url: '/saldo',
+            method: 'GET',
+    //        headers: { Authorization: `JWT ${token}`},
+        }).then(response => {
+            let balanceAccount = null 
+            response.body.forEach(account => { 
+                if(account.conta === 'Conta para saldo') balanceAccount = account.saldo
+            })
+            expect(balanceAccount).to.be.equal('4034.00') 
+        })
+    })
+       
     it('Should remove a transaction', () => { //Deve remover uma movimentação
+        cy.request({ 
+            method: 'GET',
+            url: '/transacoes',
+        //    headers: { Authorization: `JWT ${token}`},
+            qs: { descricao: 'Movimentacao para exclusao' }
+        }).then(response => {
+            cy.request({
+                url: `/transacoes/${response.body[0].id}`,
+                method: 'DELETE',
+        //        headers: { Authorization: `JWT ${token}`},
+            }).its('status').should('be.equal', 204)
+        })
     })
-
 })
